@@ -1,3 +1,6 @@
+# -*- coding:utf-8 -*-
+# Author: Shilin Victor (chrono.monochrome@gmail.com)
+
 import translate
 import os
 

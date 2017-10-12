@@ -1,3 +1,6 @@
+# -*- coding:utf-8 -*-
+# Author: Shilin Victor (chrono.monochrome@gmail.com)
+
 import xml.etree.cElementTree as ET
 import re
 from base64 import b64encode, b64decode
