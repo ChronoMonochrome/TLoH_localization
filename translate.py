@@ -8,10 +8,12 @@ HEADER_TAG = "header"
 ENTRY_TAG = "Entry"
 GROUP_TAG = "Group"
 
-common_entry_ptrns = ["[\xe0-\xef].?.?", ".?\x01", "%[ds]", "#[0-9]*C", "#[0-9a-f]*"]
+common_entry_ptrns = ["[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
+
+et_parser = ET.XMLParser(encoding="utf-8")
 
 def u_test(s, enc = "shift_jis"):
 	"""Try converting string to unicode. 
@@ -30,10 +32,12 @@ def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns):
 	"""Read binary *.tbl file.
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
 
+	# FIXME: BELOW FUNCTION IS A HACK
+	# Replace it with a something better.
 	def _split(s):
-		text_start = s[:-1].rfind("\x00") + 1
+		text_start = [m.end() for m in re.finditer('\x00+', s)][-2]
 		data = s[:text_start]
-		text = s[text_start : -1]
+		text = s[text_start:]
 		return data, text
 
 	res = []
@@ -112,12 +116,12 @@ def write_xml(out_file, header, l_groups):
 	
 	idx = 0
 	for l_group in l_groups:
-		el_group = ET.SubElement(doc, GROUP_TAG, type = l_group["type"], data = l_group["data"], idx = "%d" % idx)	
+		el_group = ET.SubElement(doc, GROUP_TAG, type = l_group["type"], data = l_group["data"], idx = "%d" % idx)
 		for l_entry in l_group["entries"]:
 			if "data" in l_entry:
 				ET.SubElement(el_group, ENTRY_TAG, data = l_entry["data"]).text = ""
 			elif "text" in l_entry:
-				if "b64_encoded" in l_entry and l_entry["b64_encoded"]:
+				if l_entry.get("b64_encoded"):
 					ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "%s" %\
 					        l_entry["b64_encoded"]).text = l_entry["text"]
 				else:
@@ -133,7 +137,8 @@ def read_xml(in_file):
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
 
 	res = []
-	root = ET.parse(in_file).getroot()
+	tree = ET.parse(in_file, parser = et_parser)
+	root = tree.getroot()
 	doc = root.find("doc")
 	el_header = doc.find(HEADER_TAG)	
 	el_groups = doc.findall(GROUP_TAG)
@@ -183,7 +188,6 @@ def write_tbl(out_file, header, l_groups):
 					text = l_entry["text"].encode("shift_jis")
 				
 				res.append(text)
-		res.append("\x00")
 	open(out_file, "wb").write(b"".join(res))
 	
 def dump_txt(out_file, l_groups):
