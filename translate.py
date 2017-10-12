@@ -9,9 +9,9 @@ ENTRY_TAG = "Entry"
 GROUP_TAG = "Group"
 
 common_entry_ptrns = ["[\xe0-\xef].?.?", ".?\x01", "%[ds]", "#[0-9]*C", "#[0-9a-f]*"]
-common_entry_ptrn = "(%s)" % ("|".join(common_entry_ptrns))
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
+_build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
 
 def u_test(s, enc = "shift_jis"):
 	"""Try converting string to unicode. 
@@ -36,7 +36,7 @@ def _get_tbl_tag(in_file, is_tbl_file, tbl_tag_max_len = 200):
 		el_header = doc.find(HEADER_TAG)
 		return el_header.get("type")
 
-def read_tbl(in_file, l_tbl_tags):
+def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns):
 	"""Read binary *.tbl file.
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
 
@@ -48,8 +48,10 @@ def read_tbl(in_file, l_tbl_tags):
 
 	res = []
 	data = open(in_file, "rb").read()
-	ptrn = "(%s)" % "|".join(l_tbl_tags)
-	raw_strings = re.split(ptrn, data)
+	
+	entry_ptrn = _build_or_ptrn(entry_ptrns)
+	tag_ptrn = _build_or_ptrn(l_tbl_tags)
+	raw_strings = re.split(tag_ptrn, data)
 
 	header = OrderedDict()
 	header["data"] = b64encode(raw_strings[0])
@@ -72,13 +74,13 @@ def read_tbl(in_file, l_tbl_tags):
 		entry_group["type"] = tag_type
 		tag_type = ""
 
-		for entry_text in re.split(common_entry_ptrn, raw_text):
+		for entry_text in re.split(entry_ptrn, raw_text):
 			if not entry_text:
 				continue
 
 			entry = OrderedDict()
 
-			if not _match(entry_text, common_entry_ptrns):
+			if not _match(entry_text, entry_ptrns):
 				entry_text, b64 = u_test(entry_text)
 				entry["text"] = entry_text
 				if b64:
