@@ -4,6 +4,9 @@
 import translate
 import os
 
+_main_tbl_ptrns = [".?.?.?[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]",    \
+                   "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
+
 def _main_tbl_split(s):
 		if s.find("NONE") == -1:
 			text_start = [m.end() for m in re.finditer('\x00+', s)][-2]
@@ -13,16 +16,17 @@ def _main_tbl_split(s):
 		text = s[text_start:]
 		return data, text
 
-_tbl_to_params = OrderedDict([('t_main.tbl',\
-                             [["QSChapter", "QSTitle", "QSText"],\
-							 [".?.?.?[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]", \
-							  "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"], \
-							  _main_tbl_split]),\
-						     ('t_text.tbl',\
-							 [["TextTableData"],\
-							 translate.common_entry_ptrns, \
-							 None]) \
-							])
+_tbl_to_params = OrderedDict([('t_main.tbl',                       \
+                               [["QSChapter", "QSTitle", "QSText"],\
+                                _main_tbl_ptrns,                   \
+                                _main_tbl_split]                   \
+                              ),                                   \
+                              ('t_text.tbl',                       \
+                               [["TextTableData"],                 \
+                               translate.common_entry_ptrns,       \
+                               None]                               \
+                              )                                    \
+                            ])
 
 def xml_to_tbl(in_file, out_file):
 	header, l_groups = translate.read_xml(in_file)
