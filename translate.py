@@ -28,7 +28,7 @@ def u_test(s, enc = "shift_jis"):
 		
 	return res, b64_encoded
 
-def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns):
+def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns, split_cb = None):
 	"""Read binary *.tbl file.
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
 
@@ -39,6 +39,9 @@ def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns):
 		data = s[:text_start]
 		text = s[text_start:]
 		return data, text
+		
+	if not split_cb:
+		split_cb = _split
 
 	res = []
 	data = open(in_file, "rb").read()
@@ -57,7 +60,7 @@ def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns):
 		# just proceed it as an entry text. Otherwise,
 		# remember a tag type and proceed the next raw_string.
 		if not raw_string in l_tbl_tags:
-			data, raw_text = _split(raw_string)
+			data, raw_text = split_cb(raw_string)
 		else:
 			tag_type = raw_string
 			continue
