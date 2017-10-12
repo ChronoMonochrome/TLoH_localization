@@ -25,16 +25,6 @@ def u_test(s, enc = "shift_jis"):
 		res = b64encode(s)
 		
 	return res, b64_encoded
-	
-def _get_tbl_tag(in_file, is_tbl_file, tbl_tag_max_len = 200):
-	if is_tbl_file:
-		s = open(in_file, "rb").read(tbl_tag_max_len)
-		return s[TBL_SIGNATURE_LEN : s.find("\x00", TBL_SIGNATURE_LEN)]
-	else:
-		root = ET.parse(in_file).getroot()
-		doc = root.find("doc")
-		el_header = doc.find(HEADER_TAG)
-		return el_header.get("type")
 
 def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns):
 	"""Read binary *.tbl file.
