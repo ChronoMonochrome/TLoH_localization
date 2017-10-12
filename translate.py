@@ -93,26 +93,26 @@ def read_tbl(in_file, l_tbl_tags):
 
 	return header, res
 	
+def _indent(elem, level = 0):
+	i = "\n" + level * "  "
+	if len(elem):
+		if not elem.text or not elem.text.strip():
+			elem.text = i + "  "
+		if not elem.tail or not elem.tail.strip():
+			elem.tail = i
+		for elem in elem:
+			_indent(elem, level + 1)
+		if not elem.tail or not elem.tail.strip():
+			elem.tail = i
+	else:
+		if level and (not elem.tail or not elem.tail.strip()):
+			elem.tail = i
+
 def write_xml(out_file, header, l_groups):
 	"""Write *.tbl file data to XML file.
 	Params:
 	@header - *.tbl file header
 	@l_groups - list of OrderedDict's representing each text or binary data entry."""
-	
-	def indent(elem, level = 0):
-		i = "\n" + level * "  "
-		if len(elem):
-			if not elem.text or not elem.text.strip():
-				elem.text = i + "  "
-			if not elem.tail or not elem.tail.strip():
-				elem.tail = i
-			for elem in elem:
-				indent(elem, level + 1)
-			if not elem.tail or not elem.tail.strip():
-				elem.tail = i
-		else:
-			if level and (not elem.tail or not elem.tail.strip()):
-				elem.tail = i
 
 	root = ET.Element("root")
 	doc = ET.SubElement(root, "doc")
@@ -133,7 +133,7 @@ def write_xml(out_file, header, l_groups):
 		
 		idx += 1
 		
-	indent(root)
+	_indent(root)
 	open(out_file, "wb").write(ET.tostring(root, encoding='utf8', method='xml'))
 	
 def read_xml(in_file):
@@ -185,7 +185,7 @@ def write_tbl(out_file, header, l_groups):
 			if "data" in l_entry:
 				res.append(b64decode(l_entry["data"]))
 			elif "text" in l_entry:
-				if "b64_encoded" in l_entry and l_entry["b64_encoded"]:
+				if l_entry.get("b64_encoded"):
 					text = b64decode(l_entry["text"])
 				else:
 					text = l_entry["text"].encode("shift_jis")
