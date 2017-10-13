@@ -9,13 +9,6 @@ from collections import OrderedDict
 
 _main_tbl_ptrns = ["\x00+", "\x1d", ".?\x01", "%[ds]",    \
                    "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
-				   
-_item_ptrns = ["\x00{1}[D-\xcb]{1}\x00{1}.{1}[\x00-\n]{1}[\x00-\xfd]{1}.{1}[0-T]{1}[\x00-V]{1}[\x00-\xca]{1}"    \
-"[\x00-\xc3]{1}[\x00-P]{1}[\x00-\xca]{1}[\x00-\xc8]{1}[\x00-\xb8]{1}[\x00-\xe8]{1}.{1}.{1}.{1}.{1}.{1}.{1}.{1}"  \
-"[\x00-\xc8]{1}[\x00-\x97]{1}.{1}[\x00-\xc8]{1}.{1}[\x00-\x19]{1}[\x00-P]{1}\x00{1}.{1}[\x00-\x14]{1}[\x00-d]{1}"\
-"\x00{1}[\x00-\x0f]{1}\x00{1}[\x00-\x0f]{1}[\x00-\x03]{1}[\x00-\x0f]{1}\x00{1}.{1}[\x00-\x07]{1}[\x00-\xb4]{1}"  \
-"[\x00-\xe0]{1}.{1}[\x00-\xc3]{1}[\x00-\xf4]{1}[\x00-\xf4]{1}.{1}.{1}[\x00-u]{1}[\x00-k]{1}.{1}.{1}.{1}.{1}.{1}" \
-".{1}[ -\xff]{1}", "\x00+"]
 
 def _main_tbl_split(s):
 	if s.find("NONE") == -1:
@@ -27,23 +20,23 @@ def _main_tbl_split(s):
 	return data, text
 		
 def _item_tbl_split(s):
-	return "", s
+	return s[:60], s[60:]
 
-_tbl_to_params = OrderedDict([('t_main',                       \
+_tbl_to_params = OrderedDict([('t_main',                           \
                                [["QSChapter", "QSTitle", "QSText"],\
                                 _main_tbl_ptrns,                   \
                                 _main_tbl_split]                   \
                               ),                                   \
-                              ('t_text',                       \
+                              ('t_text',                           \
                                [["TextTableData"],                 \
                                translate.common_entry_ptrns,       \
                                translate._split]                   \
                               ),                                   \
-                              ('t_item',                       \
+                              ('t_item',                           \
                                [["item"],                          \
-                               _item_ptrns,                        \
+                               translate.common_entry_ptrns,       \
                                _item_tbl_split]                    \
-                              ),  
+                              ),                                   \
 						    ])
 							
 def _read_xml(file):
@@ -137,6 +130,12 @@ def dump_data(in_file, out_file):
 	header, l_groups = _read_file(in_file)
 	return translate.dump_data(out_file, l_groups)
 	
+def encode(in_file, out_file, out_enc):
+	header, l_groups = _read_file(in_file)
+
+	#l_groups = translate.change_encoding(l_groups, out_enc)
+	translate.write_tbl(out_file, header, l_groups, out_enc)
+	
 def usage():
 	print "fail"
 	exit()
@@ -148,7 +147,8 @@ actions_tbl = {
 	"convert":    (convert,    1, 2),
 	"dump_text":  (dump_text,  2, 2),
 	"dump_data":  (dump_data,  2, 2),
-	"wrap":       (wrap_text,  2, 2)
+	"wrap":       (wrap_text,  2, 2),
+	"encode":     (encode,     3, 3) 
 }
 	
 if __name__ == "__main__":

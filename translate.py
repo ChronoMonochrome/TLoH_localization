@@ -253,7 +253,7 @@ def wrap_text(l_groups):
 		entries = []
 		for entry in l_group["entries"]:
 			if "text" in entry:
-				if entry["text"] [-1] == "\n":
+				if entry["text"][-1] == "\n":
 					entry["text"] = "\n".join(wrapper.wrap(entry["text"])) + "\n"
 				else:
 					entry["text"] = "\n".join(wrapper.wrap(entry["text"]))
