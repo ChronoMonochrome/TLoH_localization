@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 import re
 from base64 import b64encode, b64decode
 from collections import OrderedDict
+from textwrap import *
 
 TBL_SIGNATURE_LEN = 2
 HEADER_TAG = "header"
@@ -18,6 +19,10 @@ _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
 
 et_parser = ET.XMLParser(encoding="utf-8")
+
+wrapper = TextWrapper()
+wrapper.width = 30
+
 
 def u_test(s, enc = "shift_jis"):
 	"""Try converting string to unicode. 
@@ -186,7 +191,7 @@ def read_xml(in_file):
 	header["data"] = el_header.text
 	return header, res
 	
-def write_tbl(out_file, header, l_groups):
+def write_tbl(out_file, header, l_groups, enc = "u8"):
 	"""Write *.tbl data to file.
 	Params:
 	@header - *.tbl file header
@@ -205,7 +210,7 @@ def write_tbl(out_file, header, l_groups):
 				if l_entry.get("b64_encoded"):
 					text = b64decode(l_entry["text"])
 				else:
-					text = l_entry["text"].encode("shift_jis")
+					text = l_entry["text"].encode(enc)
 				
 				res.append(text)
 	open(out_file, "wb").write(b"".join(res))
@@ -232,3 +237,19 @@ def dump_data(out_file, l_groups):
 	for l_group in l_groups:
 		res.append(b64decode(l_group["data"]))
 	return open(out_file, "wb").write(repr(res))
+	
+def wrap_text(l_groups):
+	res = []
+	
+	for l_group in l_groups:
+		entries = []
+		for entry in l_group["entries"]:
+			if "text" in entry:
+				if entry["text"] [-1] == "\n":
+					entry["text"] = "\n".join(wrapper.wrap(entry["text"])) + "\n"
+				else:
+					entry["text"] = "\n".join(wrapper.wrap(entry["text"]))
+			entries.append(entry)
+		l_group["entries"] = entries
+		res.append(l_group)
+	return res

@@ -10,12 +10,12 @@ from collections import OrderedDict
 _main_tbl_ptrns = [".?.?.?[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]",    \
                    "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
 				   
-_item_ptrns = ["\x00{1}[D-\xcb]{1}\x00{1}.{1}[\x00-\n]{1}[\x00-\xfd]{1}.{1}[0-T]{1}[\x00-V]{1}"          \
-"[\x00-\xca]{1}[\x00-\xc3]{1}[\x00-P]{1}[\x00-\xca]{1}[\x00-\xc8]{1}[\x00-\xb8]{1}[\x00-\xe8]{1}"        \
-".{1}.{1}.{1}.{1}.{1}.{1}.{1}[\x00-\xc8]{1}[\x00-\x97]{1}.{1}[\x00-\xc8]{1}.{1}[\x00-\x19]{1}"           \
-"[\x00-P]{1}\x00{1}.{1}[\x00-\x14]{1}[\x00-d]{1}\x00{1}[\x00-\x0f]{1}\x00{1}[\x00-\x0f]{1}"              \
-"[\x00-\x03]{1}[\x00-\x0f]{1}\x00{1}.{1}[\x00-\x07]{1}[\x00-\xb4]{1}[\x00-\xe0]{1}.{1}[\x00-\xc3]{1}"    \
-"[\x00-\xf4]{1}[\x00-\xf4]{1}.{1}.{1}[\x00-u]{1}[\x00-k]{1}.{1}.{1}.{1}.{1}.{1}.{1}[ -\xff]{1}", "\x00+"]
+_item_ptrns = ["\x00{1}[D-\xcb]{1}\x00{1}.{1}[\x00-\n]{1}[\x00-\xfd]{1}.{1}[0-T]{1}[\x00-V]{1}[\x00-\xca]{1}"    \
+"[\x00-\xc3]{1}[\x00-P]{1}[\x00-\xca]{1}[\x00-\xc8]{1}[\x00-\xb8]{1}[\x00-\xe8]{1}.{1}.{1}.{1}.{1}.{1}.{1}.{1}"  \
+"[\x00-\xc8]{1}[\x00-\x97]{1}.{1}[\x00-\xc8]{1}.{1}[\x00-\x19]{1}[\x00-P]{1}\x00{1}.{1}[\x00-\x14]{1}[\x00-d]{1}"\
+"\x00{1}[\x00-\x0f]{1}\x00{1}[\x00-\x0f]{1}[\x00-\x03]{1}[\x00-\x0f]{1}\x00{1}.{1}[\x00-\x07]{1}[\x00-\xb4]{1}"  \
+"[\x00-\xe0]{1}.{1}[\x00-\xc3]{1}[\x00-\xf4]{1}[\x00-\xf4]{1}.{1}.{1}[\x00-u]{1}[\x00-k]{1}.{1}.{1}.{1}.{1}.{1}" \
+".{1}[ -\xff]{1}", "\x00+"]
 
 def _main_tbl_split(s):
 	if s.find("NONE") == -1:
@@ -29,17 +29,17 @@ def _main_tbl_split(s):
 def _item_tbl_split(s):
 	return "", s
 
-_tbl_to_params = OrderedDict([('t_main.tbl',                       \
+_tbl_to_params = OrderedDict([('t_main',                       \
                                [["QSChapter", "QSTitle", "QSText"],\
                                 _main_tbl_ptrns,                   \
                                 _main_tbl_split]                   \
                               ),                                   \
-                              ('t_text.tbl',                       \
+                              ('t_text',                       \
                                [["TextTableData"],                 \
                                translate.common_entry_ptrns,       \
                                translate._split]                   \
                               ),                                   \
-                              ('t_item.tbl',                       \
+                              ('t_item',                       \
                                [["item"],                          \
                                _item_ptrns,                        \
                                _item_tbl_split]                    \
@@ -51,7 +51,14 @@ def _read_xml(file):
 							
 def _read_tbl(file):
 	name = os.path.split(file)[-1]
-	params = _tbl_to_params.get(name)
+	
+	found = False
+	for key, params in _tbl_to_params.items():
+		if key.startswith(file):
+			found = True
+			break
+			
+	assert(found)
 	return translate.read_tbl(file, *params)
 	
 def _read_file(file):
@@ -76,18 +83,35 @@ def tbl_to_xml(in_file, out_file = ""):
 		in_file = os.path.splitext(in_file)[0] + ".xml"
 	translate.write_xml(out_file, header, l_groups)
 	
+def _get_out_filename(in_filename, in_ext):
+	if (in_ext == ".tbl"):
+		return in_filename + ".xml"
+	elif (in_ext == ".xml"):
+		return in_filename + ".tbl"
+	
 def convert(in_file, out_file = ""):
 	header, l_groups = _read_file(in_file)
-	
+
 	_in_file, _in_ext = os.path.splitext(in_file)
+
+	if not out_file:
+		out_file = _get_out_filename(_in_file, _in_ext)
+
 	if (_in_ext == ".tbl"):
-		if not out_file:
-			out_file = _in_file + ".xml"
-			
 		translate.write_xml(out_file, header, l_groups)
 	elif (_in_ext == ".xml"):
-		if not out_file:
-			out_file = _in_file + ".tbl"
+		translate.write_tbl(out_file, header, l_groups)
+		
+def wrap_text(in_file, out_file):
+	header, l_groups = _read_file(in_file)
+		
+	l_groups = translate.wrap_text(l_groups)
+	
+	_out_file, _out_ext = os.path.splitext(out_file)
+
+	if (_out_ext == ".xml"):
+		translate.write_xml(out_file, header, l_groups)
+	elif (_out_ext == ".tbl"):
 		translate.write_tbl(out_file, header, l_groups)
 	
 def merge_tbl(orig_file, data_file, out_file):
@@ -123,7 +147,8 @@ actions_tbl = {
 	"merge":      (merge_tbl,  3, 3),
 	"convert":    (convert,    1, 2),
 	"dump_text":  (dump_text,  2, 2),
-	"dump_data":  (dump_data,  2, 2)
+	"dump_data":  (dump_data,  2, 2),
+	"wrap":       (wrap_text,  2, 2)
 }
 	
 if __name__ == "__main__":
