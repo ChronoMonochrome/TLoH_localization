@@ -1,7 +1,8 @@
-# -*- coding:utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Author: Shilin Victor (chrono.monochrome@gmail.com)
 
-import xml.etree.cElementTree as ET
+import xml.etree.ElementTree as ET
 import re
 from base64 import b64encode, b64decode
 from collections import OrderedDict
@@ -30,18 +31,28 @@ def u_test(s, enc = "shift_jis"):
 		res = b64encode(s)
 		
 	return res, b64_encoded
+	
+# FIXME: BELOW FUNCTION IS A HACK
+# Replace it with a something better.
+def _split(s):
+	tmp = [m.end() for m in re.finditer('\x00+', s)]
+	
+	if len(tmp) == 1:
+		text_start = tmp[0]
+	else:
+		try:
+			text_start = tmp[-2]
+		except:
+			print len(tmp), tmp
+			raise
+
+	data = s[:text_start]
+	text = s[text_start:]
+	return data, text
 
 def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns, split_cb = None):
 	"""Read binary *.tbl file.
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
-
-	# FIXME: BELOW FUNCTION IS A HACK
-	# Replace it with a something better.
-	def _split(s):
-		text_start = [m.end() for m in re.finditer('\x00+', s)][-2]
-		data = s[:text_start]
-		text = s[text_start:]
-		return data, text
 		
 	if not split_cb:
 		split_cb = _split
@@ -110,7 +121,7 @@ def _indent(elem, level = 0):
 		if level and (not elem.tail or not elem.tail.strip()):
 			elem.tail = i
 
-def write_xml(out_file, header, l_groups):
+def write_xml(out_file, header, l_groups, use_base64 = False):
 	"""Write *.tbl file data to XML file.
 	Params:
 	@header - *.tbl file header
@@ -131,7 +142,10 @@ def write_xml(out_file, header, l_groups):
 					ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "%s" %\
 					        l_entry["b64_encoded"]).text = l_entry["text"]
 				else:
-					ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
+					if not use_base64:
+						ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
+					else:
+						ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = b64encode(l_entry["text"])
 		
 		idx += 1
 		
