@@ -96,17 +96,22 @@ def merge_tbl(orig_file, data_file, out_file):
 		translate.write_tbl(out_file, header1, res1)
 	
 def usage():
+	print "fail"
 	exit()
 	
+actions_tbl = {
+	"xml_to_tbl": (xml_to_tbl, 1, 2),
+	"tbl_to_xml": (tbl_to_xml, 1, 2),
+	"merge":      (merge_tbl,  3, 3),
+	"convert":    (convert,    1, 2)
+}
+	
 if __name__ == "__main__":
-	if len(sys.argv) < 3:
+	if sys.argv[1] not in actions_tbl.keys():
 		usage()
 	else:
-		if sys.argv[1] == "xml_to_tbl":
-			xml_to_tbl(*sys.argv[2:])
-		elif sys.argv[1] == "tbl_to_xml":
-			tbl_to_xml(*sys.argv[2:])
-		elif sys.argv[1] == "merge":
-			merge_tbl(*sys.argv[2:])
-		elif sys.argv[1] == "convert":
-			convert(*sys.argv[2:])
+		action_cb, min_args, max_args = actions_tbl[sys.argv[1]]
+		if not (min_args <= len(sys.argv) - 2 <= max_args):
+			usage()
+		else:
+			action_cb(*sys.argv[2:])
