@@ -10,6 +10,8 @@ from collections import OrderedDict
 _main_tbl_ptrns = ["\x00+", "\x1d", ".?\x01", "%[ds]",    \
                    "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
 
+_item_tbl_ptrns = translate.common_entry_ptrns + ["\xff{1}"]
+				   
 def _main_tbl_split(s):
 	if s.find("NONE") == -1:
 		text_start = [m.end() for m in re.finditer('\x00+', s)][-2]
@@ -20,7 +22,10 @@ def _main_tbl_split(s):
 	return data, text
 		
 def _item_tbl_split(s):
-	return s[:60], s[60:]
+	if len(s) >= 55:
+		return s[:55], s[55:]
+	else:
+		return "", s
 
 _tbl_to_params = OrderedDict([('t_main',                           \
                                [["QSChapter", "QSTitle", "QSText"],\
@@ -34,7 +39,7 @@ _tbl_to_params = OrderedDict([('t_main',                           \
                               ),                                   \
                               ('t_item',                           \
                                [["item"],                          \
-                               translate.common_entry_ptrns,       \
+                               _item_tbl_ptrns,                    \
                                _item_tbl_split]                    \
                               ),                                   \
 						    ])

@@ -14,7 +14,7 @@ ENTRY_TAG = "Entry"
 GROUP_TAG = "Group"
 
 common_entry_ptrns = ["\xe3\x8a\xa5", "\xe3\x8d\xbb", "\xe2\x98\x85", "\xe3\x83\xbb", "\xef\xbc\x9f", \
-                      "\xe2\x80\xbb", "\xef\xbc\x8d", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
+                      "\xe2\x80\xbb", "\xef\xbc\x8d", "\xe2\x97\x86", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
