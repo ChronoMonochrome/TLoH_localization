@@ -13,7 +13,8 @@ HEADER_TAG = "header"
 ENTRY_TAG = "Entry"
 GROUP_TAG = "Group"
 
-common_entry_ptrns = ["[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
+common_entry_ptrns = ["\xe3\x8a\xa5", "\xe3\x8d\xbb", "\xe2\x98\x85", "\xe3\x83\xbb", "\xef\xbc\x9f", \
+                      "\xe2\x80\xbb", "\xef\xbc\x8d", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
@@ -24,13 +25,16 @@ wrapper = TextWrapper()
 wrapper.width = 30
 
 
-def u_test(s, enc = "shift_jis"):
+def u_test(s):
 	"""Try converting string to unicode. 
 	If that fails, will return base64-encoded string instead."""
 	b64_encoded = False
 
 	try:
-		res = s.decode(enc) 
+		try:
+			res = s.decode("u8")
+		except:
+			res = s.decode("shift_jis")
 	except:
 		b64_encoded = True
 		res = b64encode(s)
@@ -191,7 +195,7 @@ def read_xml(in_file):
 	header["data"] = el_header.text
 	return header, res
 	
-def write_tbl(out_file, header, l_groups, enc = "u8"):
+def write_tbl(out_file, header, l_groups, enc = "shift_jis"):
 	"""Write *.tbl data to file.
 	Params:
 	@header - *.tbl file header
@@ -210,7 +214,11 @@ def write_tbl(out_file, header, l_groups, enc = "u8"):
 				if l_entry.get("b64_encoded"):
 					text = b64decode(l_entry["text"])
 				else:
-					text = l_entry["text"].encode(enc)
+					try:
+						text = l_entry["text"].encode(enc)
+					except:
+						print l_entry
+						raise
 				
 				res.append(text)
 	open(out_file, "wb").write(b"".join(res))

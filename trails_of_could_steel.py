@@ -7,7 +7,7 @@ import re
 import translate
 from collections import OrderedDict
 
-_main_tbl_ptrns = [".?.?.?[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]",    \
+_main_tbl_ptrns = ["\x00+", "\x1d", ".?\x01", "%[ds]",    \
                    "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
 				   
 _item_ptrns = ["\x00{1}[D-\xcb]{1}\x00{1}.{1}[\x00-\n]{1}[\x00-\xfd]{1}.{1}[0-T]{1}[\x00-V]{1}[\x00-\xca]{1}"    \
@@ -54,7 +54,7 @@ def _read_tbl(file):
 	
 	found = False
 	for key, params in _tbl_to_params.items():
-		if key.startswith(file):
+		if file.find(key) != -1:
 			found = True
 			break
 			
