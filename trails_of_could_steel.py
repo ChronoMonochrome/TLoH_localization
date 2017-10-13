@@ -9,15 +9,25 @@ from collections import OrderedDict
 
 _main_tbl_ptrns = [".?.?.?[\xe0-\xef].?.?", "\x00+", ".?\x01", "%[ds]",    \
                    "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
+				   
+_item_ptrns = ["\x00{1}[D-\xcb]{1}\x00{1}.{1}[\x00-\n]{1}[\x00-\xfd]{1}.{1}[0-T]{1}[\x00-V]{1}"          \
+"[\x00-\xca]{1}[\x00-\xc3]{1}[\x00-P]{1}[\x00-\xca]{1}[\x00-\xc8]{1}[\x00-\xb8]{1}[\x00-\xe8]{1}"        \
+".{1}.{1}.{1}.{1}.{1}.{1}.{1}[\x00-\xc8]{1}[\x00-\x97]{1}.{1}[\x00-\xc8]{1}.{1}[\x00-\x19]{1}"           \
+"[\x00-P]{1}\x00{1}.{1}[\x00-\x14]{1}[\x00-d]{1}\x00{1}[\x00-\x0f]{1}\x00{1}[\x00-\x0f]{1}"              \
+"[\x00-\x03]{1}[\x00-\x0f]{1}\x00{1}.{1}[\x00-\x07]{1}[\x00-\xb4]{1}[\x00-\xe0]{1}.{1}[\x00-\xc3]{1}"    \
+"[\x00-\xf4]{1}[\x00-\xf4]{1}.{1}.{1}[\x00-u]{1}[\x00-k]{1}.{1}.{1}.{1}.{1}.{1}.{1}[ -\xff]{1}", "\x00+"]
 
 def _main_tbl_split(s):
-		if s.find("NONE") == -1:
-			text_start = [m.end() for m in re.finditer('\x00+', s)][-2]
-		else:
-			text_start = [m.end() for m in re.finditer('\x00+', s)][-4]
-		data = s[:text_start]
-		text = s[text_start:]
-		return data, text
+	if s.find("NONE") == -1:
+		text_start = [m.end() for m in re.finditer('\x00+', s)][-2]
+	else:
+		text_start = [m.end() for m in re.finditer('\x00+', s)][-4]
+	data = s[:text_start]
+	text = s[text_start:]
+	return data, text
+		
+def _item_tbl_split(s):
+	return "", s
 
 _tbl_to_params = OrderedDict([('t_main.tbl',                       \
                                [["QSChapter", "QSTitle", "QSText"],\
@@ -31,8 +41,8 @@ _tbl_to_params = OrderedDict([('t_main.tbl',                       \
                               ),                                   \
                               ('t_item.tbl',                       \
                                [["item"],                          \
-                               translate.common_entry_ptrns,       \
-                               translate._split]                   \
+                               _item_ptrns,                        \
+                               _item_tbl_split]                    \
                               ),  
 						    ])
 							
@@ -94,6 +104,14 @@ def merge_tbl(orig_file, data_file, out_file):
 		translate.write_xml(out_file, header1, res1)
 	elif out_format == ".tbl":
 		translate.write_tbl(out_file, header1, res1)
+		
+def dump_text(in_file, out_file):
+	header, l_groups = _read_file(in_file)
+	return translate.dump_text(out_file, l_groups)
+	
+def dump_data(in_file, out_file):
+	header, l_groups = _read_file(in_file)
+	return translate.dump_data(out_file, l_groups)
 	
 def usage():
 	print "fail"
@@ -103,7 +121,9 @@ actions_tbl = {
 	"xml_to_tbl": (xml_to_tbl, 1, 2),
 	"tbl_to_xml": (tbl_to_xml, 1, 2),
 	"merge":      (merge_tbl,  3, 3),
-	"convert":    (convert,    1, 2)
+	"convert":    (convert,    1, 2),
+	"dump_text":  (dump_text,  2, 2),
+	"dump_data":  (dump_data,  2, 2)
 }
 	
 if __name__ == "__main__":

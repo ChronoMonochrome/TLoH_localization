@@ -210,7 +210,7 @@ def write_tbl(out_file, header, l_groups):
 				res.append(text)
 	open(out_file, "wb").write(b"".join(res))
 	
-def dump_txt(out_file, l_groups):
+def dump_text(out_file, l_groups):
 	"""Dump text entries of *.tbl file"""
 	
 	res = []
@@ -224,3 +224,11 @@ def dump_txt(out_file, l_groups):
 		idx += 1
 	return open(out_file, "wb")\
 	       .write("".join(res).encode("u8"))
+		   
+def dump_data(out_file, l_groups):
+	"""Dump data entries of *.tbl file"""
+	res = []
+
+	for l_group in l_groups:
+		res.append(b64decode(l_group["data"]))
+	return open(out_file, "wb").write(repr(res))
