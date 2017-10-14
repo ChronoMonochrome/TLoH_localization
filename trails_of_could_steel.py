@@ -10,7 +10,7 @@ from collections import OrderedDict
 _main_tbl_ptrns = ["\x00+", "\x1d", ".?\x01", "%[ds]",    \
                    "#[0-9]*[CI]", "#[0-9a-f]*/*", "[\x01-\x09\x0b-\x1c]+"]
 
-_item_tbl_ptrns = translate.common_entry_ptrns + ["\xff{1}"]
+_item_tbl_ptrns = [".*\xff\xff"]
 				   
 def _main_tbl_split(s):
 	if s.find("NONE") == -1:
@@ -22,10 +22,10 @@ def _main_tbl_split(s):
 	return data, text
 		
 def _item_tbl_split(s):
-	if len(s) >= 55:
-		return s[:55], s[55:]
-	else:
-		return "", s
+	#if len(s) >= 55:
+	#	return s[:55], s[55:]
+	#else:
+	return "", s
 
 _tbl_to_params = OrderedDict([('t_main',                           \
                                [["QSChapter", "QSTitle", "QSText"],\
@@ -42,11 +42,124 @@ _tbl_to_params = OrderedDict([('t_main',                           \
                                _item_tbl_ptrns,                    \
                                _item_tbl_split]                    \
                               ),                                   \
-						    ])
-							
+                              ('t_active',                         \
+                               [["ActiveVoiceTableData"],          \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_book',                           \
+                               [["QSBookScp",                      \
+                                 "QSChapter", "QSBook"],           \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_btlsys',                         \
+                               [["TacticalBonus"],                 \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_dlc',                            \
+                               [["dlc"],                           \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_fish',                           \
+                               [["fish_pnt"],                      \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_hikitugi',                       \
+                               [["hkitugi_lst"],                   \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_jump',                           \
+                               [["MapJumpData"],                   \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_linkab',                         \
+                               [["LinkAbList"],                    \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_magic',                          \
+                               [["magic"],                         \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_mg02',                           \
+                               [["MG02Title", "MG02Text"],         \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_mons',                           \
+                               [["status"],                        \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_mstqrt',                         \
+                               [["MasterQuartzBase",               \
+                                 "MasterQuartzData",               \
+                                 "MasterQuartzMemo"],              \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_name',                           \
+                               [["NameTableData"],                 \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_navi',                           \
+                               [["NaviTextData"],                  \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_notechar',                       \
+                               [["QSChapter", "QSChar"],           \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_notecook',                       \
+                               [["QSCook"],                        \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_notefish',                       \
+                               [["QSFish"],                        \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_notehelp',                       \
+                               [["QSChapter", "QSHelp"],           \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_notemons',                       \
+                               [["QSChapter", "QSMons"],           \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                              ('t_place',                          \
+                               [["PlaceTableData"],                \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                             ('t_quest',                           \
+                               [["QSRank", "QSTitle", "QSText"],   \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                             ('t_status',                          \
+                               [["growth", "status"],              \
+                               translate.common_entry_ptrns,       \
+                               translate._split]                   \
+                              ),                                   \
+                             ])
+                            
 def _read_xml(file):
 	return translate.read_xml(file)
-							
+
 def _read_tbl(file):
 	name = os.path.split(file)[-1]
 	
