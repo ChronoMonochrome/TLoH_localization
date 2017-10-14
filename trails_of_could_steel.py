@@ -174,11 +174,13 @@ def _read_tbl(file):
 	
 def _read_file(file):
 	ext = os.path.splitext(file)[-1]
-	assert(ext in [".tbl", ".xml"])
+	assert(ext in [".tbl", ".xml", ".dat"])
 	if ext == ".tbl":
 		return _read_tbl(file)
 	elif ext == ".xml":
 		return _read_xml(file)
+	elif ext == ".dat":
+		return _read_dat(file)
 
 def xml_to_tbl(in_file, out_file = ""):
 	header, l_groups = translate.read_xml(in_file)
@@ -191,8 +193,21 @@ def tbl_to_xml(in_file, out_file = ""):
 	header, l_groups = _read_file(in_file)
 	
 	if not out_file:
-		in_file = os.path.splitext(in_file)[0] + ".xml"
+		out_file = os.path.splitext(in_file)[0] + ".xml"
 	translate.write_xml(out_file, header, l_groups)
+	
+def dat_to_xml(in_file, out_file = ""):
+	header, l_groups = _read_file(in_file)
+	if not out_file:
+		out_file = os.path.splitext(in_file)[0] + ".xml"
+	translate.write_xml(out_file, header, l_groups)
+	
+def xml_to_dat(in_file, out_file = ""):
+	header, l_groups = translate.read_xml(in_file)
+
+	if not out_file:
+		out_file = os.path.splitext(in_file)[0] + ".dat"
+	translate.write_tbl(out_file, header, l_groups)
 	
 def _get_out_filename(in_filename, in_ext):
 	if (in_ext == ".tbl"):
@@ -200,15 +215,12 @@ def _get_out_filename(in_filename, in_ext):
 	elif (in_ext == ".xml"):
 		return in_filename + ".tbl"
 	
-def convert(in_file, out_file = ""):
+def convert(in_file, out_file):
 	header, l_groups = _read_file(in_file)
 
 	_in_file, _in_ext = os.path.splitext(in_file)
 
-	if not out_file:
-		out_file = _get_out_filename(_in_file, _in_ext)
-
-	if (_in_ext == ".tbl"):
+	if (_in_ext in [".tbl", ".dat"]):
 		translate.write_xml(out_file, header, l_groups)
 	elif (_in_ext == ".xml"):
 		translate.write_tbl(out_file, header, l_groups)
@@ -261,8 +273,10 @@ def usage():
 actions_tbl = {
 	"xml_to_tbl": (xml_to_tbl, 1, 2),
 	"tbl_to_xml": (tbl_to_xml, 1, 2),
+	"dat_to_xml": (dat_to_xml, 1, 2),
+	"xml_to_dat": (xml_to_dat, 1, 2),
 	"merge":      (merge_tbl,  3, 3),
-	"convert":    (convert,    1, 2),
+	"convert":    (convert,    2, 2),
 	"dump_text":  (dump_text,  2, 2),
 	"dump_data":  (dump_data,  2, 2),
 	"wrap":       (wrap_text,  2, 2),

@@ -14,7 +14,17 @@ ENTRY_TAG = "Entry"
 GROUP_TAG = "Group"
 
 common_entry_ptrns = ["\xe3\x8a\xa5", "\xe3\x8d\xbb", "\xe2\x98\x85", "\xe3\x83\xbb", "\xef\xbc\x9f", \
-                      "\xe2\x80\xbb", "\xef\xbc\x8d", "\xe2\x97\x86", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
+                      "\xe2\x80\xbb", "\xef\xbc\x8d", "\xe2\x97\x86", "\xef\xbd\xab", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
+					  
+dat_common_group_ptrn = u"(\x00\x00\x10\x00\x00\x1a.?\x00|\
+\x00#E0#M0\x00\x10\x00\x00\x1a.?\x00#?K?|\x0c\x12\x1a\x03S\x03\x00\x002?\x04?J?|\
+\x02\x00\x1c[\x00-\x3e\x59-\x7e]*2\x04J)"
+
+dat_common_entry_ptrns = ["(?s)\x03\(\*\x00\x00?.*2\x04J",            \
+                          "(?s)(\x02\x00\x1c.*#K#0T\()",              \
+                          "(?s)\x02\x00\x1c.*2\x04J",                 \
+                          "(?s)\x02\x00\x1c\x02?.*\x00?\x17?\n?\x01?", 
+                          "[#E\[D\]M]*\d", "\x02\x03", "\x01"]
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
@@ -261,3 +271,38 @@ def wrap_text(l_groups):
 		l_group["entries"] = entries
 		res.append(l_group)
 	return res
+	
+def read_dat(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
+	res = []
+	data = open(in_file, "rb").read()
+	entry_ptrn = _build_or_ptrn(entry_ptrns)
+	raw_strings = re.split(group_ptrn, data)
+	header = OrderedDict()
+	header["data"] = b64encode(raw_strings[0])
+	data_ = ""
+	for raw_string in raw_strings[1:]:
+		if re.match(group_ptrn, raw_string):
+			data_ = raw_string
+			continue
+		assert(data_)
+		entry_group = OrderedDict()
+		entry_group["data"] = b64encode(data_)
+		entry_group["entries"] = []
+		entry_group["type"] = ""
+		for entry_text in re.split(entry_ptrn, raw_string, flags = re.UNICODE | re.DOTALL):
+			if not entry_text:
+				continue
+			entry = OrderedDict()
+
+			if not _match(entry_text, entry_ptrns):
+				entry_text, b64 = u_test(entry_text)
+				entry["text"] = entry_text
+				if b64:
+					entry["b64_encoded"] = b64
+			else:
+				entry["data"] = b64encode(entry_text)
+
+			entry_group["entries"].append(entry)
+
+		res.append(entry_group)
+	return header, res
