@@ -17,14 +17,17 @@ common_entry_ptrns = ["\xe3\x8a\xa5", "\xe3\x8d\xbb", "\xe2\x98\x85", "\xe3\x83\
                       "\xe2\x80\xbb", "\xef\xbc\x8d", "\xe2\x97\x86", "\xef\xbd\xab", "\x00+", ".?\x01", "%[ds]", "#[0-9]*[CI]", "#[0-9a-f]*"]
 					  
 dat_common_group_ptrn = u"(\x00\x00\x10\x00\x00\x1a.?\x00|\
-\x00#E0#M0\x00\x10\x00\x00\x1a.?\x00#?K?|\x0c\x12\x1a\x03S\x03\x00\x002?\x04?J?|\
-\x02\x00\x1c[\x00-\x3e\x59-\x7e]*2\x04J)"
+\x00#E0#M0\x00\x10\x00\x00\x1a.?\x00#?K?#?0?T?|\x0c\x12\x1a\x03S\x03\x00\x002?\x04?J?|\
+\x02\x00\x1c[\x00-\x3e\x59-\x7e]*2\x04J|\
+\x02\x00\x1c[\x00-\x3e\x59-\x7e]*?2\x04\xfe\xff|\
+\x02\x00\x1c*?\x0c\x00)"
 
-dat_common_entry_ptrns = ["(?s)\x03\(\*\x00\x00?.*2\x04J",            \
-                          "(?s)(\x02\x00\x1c.*#K#0T\()",              \
-                          "(?s)\x02\x00\x1c.*2\x04J",                 \
-                          "(?s)\x02\x00\x1c\x02?.*\x00?\x17?\n?\x01?", 
-                          "[#E\[D\]M]*\d", "\x02\x03", "\x01"]
+dat_common_entry_ptrns = ["(?s)\x03\(\*\x00\x00?.*2\x04J",
+                          "(?s)\x02\x00\x1c.*?(#K#0T\(?|\x0c\x00|\x3a\x00|2\x04\xfe\xff?|2\x04J)",
+                          "(?s)\x02\x00\x1c\x02?.*\x00?\x17?\n?\x01?", "\x00\x10\x00\x00\x1a.?.?#K",
+						  "\x05\x1e\x1f\x1a\x08\x01C",
+						  "\]?#?MA", "[#E\[D\]MTH0]*?(\d|T|\])", "#K#0T", "#E\[[A-Z]", "#H", "[\x00-\x1a]\xfe\xff",
+						  "\xe3\x88\xb1", "\x02\x03", "\x0c\x00", "\x3a\x00", "\x04C", "\x01", "\x00"]
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
@@ -140,7 +143,18 @@ def _indent(elem, level = 0):
 		if level and (not elem.tail or not elem.tail.strip()):
 			elem.tail = i
 
-def write_xml(out_file, header, l_groups, use_base64 = False):
+def _check_xml_validity(s):
+	"""Check if text is valid in XML.
+	Return 0 on a success, 1 on a failure."""
+	
+	s_elem = "<test>%s</test>" % s
+	try:
+		ET.fromstring(s_elem)
+		return 0
+	except:
+		return 1
+
+def write_xml(out_file, header, l_groups):
 	"""Write *.tbl file data to XML file.
 	Params:
 	@header - *.tbl file header
@@ -161,10 +175,11 @@ def write_xml(out_file, header, l_groups, use_base64 = False):
 					ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "%s" %\
 					        l_entry["b64_encoded"]).text = l_entry["text"]
 				else:
-					if not use_base64:
+					if _check_xml_validity(l_entry["text"]):
 						ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
 					else:
-						ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = b64encode(l_entry["text"])
+						text = l_entry["text"].encode("u8")
+						ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = b64encode(text)
 		
 		idx += 1
 		
@@ -301,6 +316,38 @@ def read_dat(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_comm
 					entry["b64_encoded"] = b64
 			else:
 				entry["data"] = b64encode(entry_text)
+
+			entry_group["entries"].append(entry)
+
+		res.append(entry_group)
+	return header, res
+	
+def read_dat1(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
+	res = []
+	data = open(in_file, "rb").read()
+	entry_ptrn = _build_or_ptrn(entry_ptrns)
+	raw_strings = re.split(group_ptrn, data)
+	header = OrderedDict()
+	header["data"] = b64encode(raw_strings[0])
+	data_ = ""
+	for raw_string in raw_strings[1:]:
+		if re.match(group_ptrn, raw_string):
+			data_ = raw_string
+			continue
+		assert(data_)
+		entry_group = OrderedDict()
+		entry_group["data"] = b64encode(data_)
+		entry_group["entries"] = []
+		entry_group["type"] = ""
+		for entry_text in re.split(entry_ptrn, raw_string, flags = re.UNICODE | re.DOTALL):
+			if not entry_text:
+				continue
+			entry = OrderedDict()
+
+			if not _match(entry_text, entry_ptrns):
+				entry["text"] = entry_text
+			else:
+				entry["data"] = entry_text
 
 			entry_group["entries"].append(entry)
 

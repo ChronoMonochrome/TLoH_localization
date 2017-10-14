@@ -159,6 +159,9 @@ _tbl_to_params = OrderedDict([('t_main',                           \
                             
 def _read_xml(file):
 	return translate.read_xml(file)
+	
+def _read_dat(file):
+	return translate.read_dat(file)
 
 def _read_tbl(file):
 	name = os.path.split(file)[-1]
