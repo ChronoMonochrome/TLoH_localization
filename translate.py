@@ -143,17 +143,6 @@ def _indent(elem, level = 0):
 		if level and (not elem.tail or not elem.tail.strip()):
 			elem.tail = i
 
-def _check_xml_validity(s):
-	"""Check if text is valid in XML.
-	Return 0 on a success, 1 on a failure."""
-	
-	s_elem = "<test>%s</test>" % s
-	try:
-		ET.fromstring(s_elem)
-		return 0
-	except:
-		return 1
-
 def write_xml(out_file, header, l_groups):
 	"""Write *.tbl file data to XML file.
 	Params:
@@ -175,11 +164,13 @@ def write_xml(out_file, header, l_groups):
 					ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "%s" %\
 					        l_entry["b64_encoded"]).text = l_entry["text"]
 				else:
-					if _check_xml_validity(l_entry["text"]):
-						ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
-					else:
-						text = l_entry["text"].encode("u8")
-						ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = b64encode(text)
+					force = 0
+					#if (not _check_xml_validity2(l_entry["text"])) or force:
+					#	ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
+					#else:
+					text = l_entry["text"].encode("u8")
+					ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
+					#ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = b64encode(text)
 		
 		idx += 1
 		
@@ -287,39 +278,40 @@ def wrap_text(l_groups):
 		res.append(l_group)
 	return res
 	
-def read_dat(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
+DAT_HEADER_END_SIGNATURE = "\x00\x05\x1e"
+
+def dat_read_header(raw_data):
+	h_start = 0
+	h_end = raw_data.find(DAT_HEADER_END_SIGNATURE) + len(DAT_HEADER_END_SIGNATURE)
+	header = raw_data[h_start: h_end]
+	return header, raw_data[h_end:]
+	
+def read_dat(in_file):
 	res = []
 	data = open(in_file, "rb").read()
-	entry_ptrn = _build_or_ptrn(entry_ptrns)
-	raw_strings = re.split(group_ptrn, data)
 	header = OrderedDict()
-	header["data"] = b64encode(raw_strings[0])
-	data_ = ""
-	for raw_string in raw_strings[1:]:
-		if re.match(group_ptrn, raw_string):
-			data_ = raw_string
-			continue
-		assert(data_)
-		entry_group = OrderedDict()
-		entry_group["data"] = b64encode(data_)
-		entry_group["entries"] = []
-		entry_group["type"] = ""
-		for entry_text in re.split(entry_ptrn, raw_string, flags = re.UNICODE | re.DOTALL):
-			if not entry_text:
-				continue
-			entry = OrderedDict()
+	header_raw, data = dat_read_header(data)
+	header["data"] = b64encode(header_raw)
+	
+	entry_group = OrderedDict()
+	entry_group["data"] = ""
+	entry_group["entries"] = []
+	entry_group["type"] = ""
 
-			if not _match(entry_text, entry_ptrns):
-				entry_text, b64 = u_test(entry_text)
-				entry["text"] = entry_text
-				if b64:
-					entry["b64_encoded"] = b64
-			else:
-				entry["data"] = b64encode(entry_text)
+	s_prev, e_prev = 0, 0
+	for match in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}", data):
+		s_curr, e_curr = match.start(), match.end()
 
-			entry_group["entries"].append(entry)
+		entry = OrderedDict()
+		entry["data"] = b64encode(data[e_prev: s_curr])
+		entry_group["entries"].append(entry)
+		
+		entry = OrderedDict()
+		entry["text"] = match.group()
+		entry_group["entries"].append(entry)
+		s_prev, e_prev = s_curr, e_curr
 
-		res.append(entry_group)
+	res.append(entry_group)
 	return header, res
 	
 def read_dat1(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
@@ -353,3 +345,13 @@ def read_dat1(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_com
 
 		res.append(entry_group)
 	return header, res
+
+def read_dat2(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
+	res = []
+	data = open(in_file, "rb").read()
+	entry_ptrn = _build_or_ptrn(entry_ptrns)
+	raw_strings = re.split(group_ptrn, data)
+	header = OrderedDict()
+	header["data"] = b64encode(raw_strings[0])
+	data_ = ""
+	return raw_strings
