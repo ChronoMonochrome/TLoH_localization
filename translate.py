@@ -292,19 +292,66 @@ def read_dat(in_file):
 	header = OrderedDict()
 	header_raw, data = dat_read_header(data)
 	header["data"] = b64encode(header_raw)
+	
+	entry_group = OrderedDict()
+	entry_group["data"] = ""
+	entry_group["entries"] = []
+	entry_group["type"] = ""
 
 	s_prev, e_prev = 0, 0
 	for match in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}", data):
 		s_curr, e_curr = match.start(), match.end()
 
-		entry_group = OrderedDict()
-		entry_group["data"] = b64encode(data[e_prev: s_curr])
-		entry_group["entries"] = []
-		entry_group["type"] = ""
+		entry = OrderedDict()
+		entry["data"] = b64encode(data[e_prev: s_curr])
+		entry_group["entries"].append(entry)
 		
 		entry = OrderedDict()
 		entry["text"] = match.group()
 		entry_group["entries"].append(entry)
 		s_prev, e_prev = s_curr, e_curr
+
+	res.append(entry_group)
+	return header, res
+	
+def read_dat1(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
+	res = []
+	data = open(in_file, "rb").read()
+	entry_ptrn = _build_or_ptrn(entry_ptrns)
+	raw_strings = re.split(group_ptrn, data)
+	header = OrderedDict()
+	header["data"] = b64encode(raw_strings[0])
+	data_ = ""
+	for raw_string in raw_strings[1:]:
+		if re.match(group_ptrn, raw_string):
+			data_ = raw_string
+			continue
+		assert(data_)
+		entry_group = OrderedDict()
+		entry_group["data"] = b64encode(data_)
+		entry_group["entries"] = []
+		entry_group["type"] = ""
+		for entry_text in re.split(entry_ptrn, raw_string, flags = re.UNICODE | re.DOTALL):
+			if not entry_text:
+				continue
+			entry = OrderedDict()
+
+			if not _match(entry_text, entry_ptrns):
+				entry["text"] = entry_text
+			else:
+				entry["data"] = entry_text
+
+			entry_group["entries"].append(entry)
+
 		res.append(entry_group)
 	return header, res
+
+def read_dat2(in_file, group_ptrn = dat_common_group_ptrn, entry_ptrns = dat_common_entry_ptrns):
+	res = []
+	data = open(in_file, "rb").read()
+	entry_ptrn = _build_or_ptrn(entry_ptrns)
+	raw_strings = re.split(group_ptrn, data)
+	header = OrderedDict()
+	header["data"] = b64encode(raw_strings[0])
+	data_ = ""
+	return raw_strings
