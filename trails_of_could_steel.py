@@ -283,9 +283,9 @@ actions_tbl = {
 	"dump_text":  (dump_text,  2, 2),
 	"dump_data":  (dump_data,  2, 2),
 	"wrap":       (wrap_text,  2, 2),
-	"encode":     (encode,     3, 3) 
+	"encode":     (encode,     3, 3)
 }
-	
+
 if __name__ == "__main__":
 	if sys.argv[1] not in actions_tbl.keys():
 		usage()
