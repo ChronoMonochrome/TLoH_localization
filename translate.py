@@ -277,6 +277,11 @@ def dat_read_header(raw_data):
 	return header, raw_data[h_end:]
 	
 def read_dat(in_file):
+	def append_entry(list_, entry_content, entry_type):
+		entry = OrderedDict()
+		entry[entry_type] = entry_content
+		list_.append(entry)
+
 	res = []
 	data = open(in_file, "rb").read()
 	header = OrderedDict()
@@ -292,14 +297,13 @@ def read_dat(in_file):
 	for match in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}", data):
 		s_curr, e_curr = match.start(), match.end()
 
-		entry = OrderedDict()
-		entry["data"] = b64encode(data[e_prev: s_curr])
-		entry_group["entries"].append(entry)
-		
-		entry = OrderedDict()
-		entry["text"] = match.group()
-		entry_group["entries"].append(entry)
+		append_entry(entry_group["entries"], b64encode(data[e_prev: s_curr]), "data")
+		append_entry(entry_group["entries"], match.group(), "text")
+
 		s_prev, e_prev = s_curr, e_curr
+	else:
+		if data[e_curr:]:
+			append_entry(entry_group["entries"], b64encode(data[e_curr:]), "data")
 
 	res.append(entry_group)
 	return header, res
