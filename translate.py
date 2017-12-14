@@ -292,17 +292,31 @@ def read_dat(in_file):
 	entry_group["entries"] = []
 	entry_group["type"] = ""
 
-	s_prev, e_prev = 0, 0
-	for match in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}|[^\x00-\x3f\x61-\x6f\x92-\xff]{8,}", data):
+	matches = [i for i in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}|[^\x00-\x3f\x61-\x6f\x92-\xff]{8,}", data)]
+	first_match = matches[0]
+	append_entry(entry_group["entries"], b64encode(data[: first_match.start()]), "data")
+	
+	buf = ""
+
+	for i, match in enumerate(matches):
 		s_curr, e_curr = match.start(), match.end()
 
-		append_entry(entry_group["entries"], b64encode(data[e_prev: s_curr]), "data")
-		append_entry(entry_group["entries"], match.group(), "text")
-
-		s_prev, e_prev = s_curr, e_curr
-	else:
-		if data[e_curr:]:
-			append_entry(entry_group["entries"], b64encode(data[e_curr:]), "data")
+		# Prepare data entry
+		try:
+			next_match = matches[i + 1]
+			s_next, e_next = next_match.start(), next_match.end()
+			data_entry = b64encode(data[e_curr: s_next])
+		except IndexError:
+			data_entry = b64encode(data[e_curr:])
+		
+		# In the case there are several neighboring text entries, join
+		# them into one. As only data entry appears, flush the buffer.
+		buf += match.group()
+		
+		if data_entry:
+			append_entry(entry_group["entries"], buf, "text")
+			append_entry(entry_group["entries"], data_entry, "data")
+			buf = ""
 
 	res.append(entry_group)
 	return header, res
