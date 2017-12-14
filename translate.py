@@ -155,12 +155,11 @@ def write_xml(out_file, header, l_groups):
 					        l_entry["b64_encoded"]).text = l_entry["text"]
 				else:
 					force = 0
-					#if (not _check_xml_validity2(l_entry["text"])) or force:
-					#	ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
-					#else:
-					text = l_entry["text"].encode("u8")
-					ET.SubElement(el_group, ENTRY_TAG).text = l_entry["text"]
-					#ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = b64encode(text)
+					text, b64_encoded = u_test(l_entry["text"])
+					if b64_encoded:
+						ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = text
+					else:
+						ET.SubElement(el_group, ENTRY_TAG).text = text
 		
 		idx += 1
 		
@@ -294,7 +293,7 @@ def read_dat(in_file):
 	entry_group["type"] = ""
 
 	s_prev, e_prev = 0, 0
-	for match in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}", data):
+	for match in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}|[^\x00-\x3f\x61-\x6f\x92-\xff]{8,}", data):
 		s_curr, e_curr = match.start(), match.end()
 
 		append_entry(entry_group["entries"], b64encode(data[e_prev: s_curr]), "data")
