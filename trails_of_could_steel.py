@@ -185,12 +185,12 @@ def _read_file(file):
 	elif ext == ".dat":
 		return _read_dat(file)
 
-def xml_to_tbl(in_file, out_file = ""):
+def xml_to_tbl(in_file, out_file = "", encoding = "u8"):
 	header, l_groups = translate.read_xml(in_file)
 
 	if not out_file:
 		out_file = os.path.splitext(in_file)[0] + ".tbl"
-	translate.write_tbl(out_file, header, l_groups)
+	translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
 def tbl_to_xml(in_file, out_file = ""):
 	header, l_groups = _read_file(in_file)
@@ -205,12 +205,12 @@ def dat_to_xml(in_file, out_file = ""):
 		out_file = os.path.splitext(in_file)[0] + ".xml"
 	translate.write_xml(out_file, header, l_groups)
 
-def xml_to_dat(in_file, out_file = ""):
+def xml_to_dat(in_file, out_file = "", encoding = "u8"):
 	header, l_groups = translate.read_xml(in_file)
 
 	if not out_file:
 		out_file = os.path.splitext(in_file)[0] + ".dat"
-	translate.write_tbl(out_file, header, l_groups)
+	translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
 def _get_out_filename(in_filename, in_ext):
 	if (in_ext == ".tbl"):
@@ -218,7 +218,7 @@ def _get_out_filename(in_filename, in_ext):
 	elif (in_ext == ".xml"):
 		return in_filename + ".tbl"
 
-def convert(in_file, out_file):
+def convert(in_file, out_file, encoding = "u8"):
 	header, l_groups = _read_file(in_file)
 
 	_in_file, _in_ext = os.path.splitext(in_file)
@@ -226,9 +226,9 @@ def convert(in_file, out_file):
 	if (_in_ext in [".tbl", ".dat"]):
 		translate.write_xml(out_file, header, l_groups)
 	elif (_in_ext == ".xml"):
-		translate.write_tbl(out_file, header, l_groups)
+		translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
-def wrap_text(in_file, out_file):
+def wrap_text(in_file, out_file, encoding = "u8"):
 	header, l_groups = _read_file(in_file)
 
 	l_groups = translate.wrap_text(l_groups)
@@ -238,9 +238,9 @@ def wrap_text(in_file, out_file):
 	if (_out_ext == ".xml"):
 		translate.write_xml(out_file, header, l_groups)
 	elif (_out_ext == ".tbl"):
-		translate.write_tbl(out_file, header, l_groups)
+		translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
-def merge_tbl(orig_file, data_file, out_file):
+def merge_tbl(orig_file, data_file, out_file, encoding = "u8"):
 	out_format = os.path.splitext(out_file)[-1]
 	assert(out_format in [".tbl", ".xml"])
 	header1, res1 = _read_file(orig_file)
@@ -252,8 +252,8 @@ def merge_tbl(orig_file, data_file, out_file):
 
 	if out_format == ".xml":
 		translate.write_xml(out_file, header1, res1)
-	elif out_format == ".tbl":
-		translate.write_tbl(out_file, header1, res1)
+	elif out_format in [".tbl", ".dat"]:
+		translate.write_tbl(out_file, header1, res1, encoding = encoding)
 
 def dump_text(in_file, out_file):
 	header, l_groups = _read_file(in_file)
@@ -287,23 +287,21 @@ def usage(commands_tbl, error = ""):
 
 def main():
 	commands_tbl = {
-	        # command       function   min_arg max_arg            args            desc
-		"xml_to_tbl" : [xml_to_tbl,   1,      2,    ["src.xml", "[dest.tbl]"], ""],
-		"tbl_to_xml" : [tbl_to_xml,   1,      2,    ["src.tbl", "[dest.xml]"], ""],
-		"dat_to_xml" : [dat_to_xml,   1,      2,    ["src.dat", "[dest.xml]"], ""],
-		"xml_to_dat" : [xml_to_dat,   1,      2,    ["src.xml", "[dest.dat]"], ""],
-		"merge"      : [merge_tbl,    3,      3,    ["src1.{tbl,xml}",           \
-	                                                     "src2.{tbl,xml}",           \
-	                                                     "dest.{tbl,xml}"       ], ""],
-		"convert"    : [convert,      2,      2,    ["src.{tbl,dat,xml}",        \
-	                                                     "dest.{tbl,dat,xml}"   ], ""],
-		"dump_text"  : [dump_text,    2,      2,    ["src.tbl",   "dest.txt"], ""],
-		"dump_data"  : [dump_data,    2,      2,    ["src.tbl",   "dest.txt"], ""],
-		"wrap"       : [wrap_text,    2,      2,    ["src.{tbl,dat,xml}",        \
-	                                                     "dest.{tbl,dat,xml}"   ], ""],
-		"encode"     : [encode,       3,      3,    ["src1.{tbl,xml}",           \
-	                                                     "dest.{tbl,xml}",           \
-	                                                       "encoding"           ], ""]
+	        # command       function   min_arg max_arg            args                        desc
+		"xml_to_tbl" : [xml_to_tbl,   1,      3,    ["src.xml", "[dest.tbl]", "[encoding]"],  ""],
+		"tbl_to_xml" : [tbl_to_xml,   1,      2,    ["src.tbl", "[dest.xml]"],                ""],
+		"dat_to_xml" : [dat_to_xml,   1,      2,    ["src.dat", "[dest.xml]"],                ""],
+		"xml_to_dat" : [xml_to_dat,   1,      3,    ["src.xml", "[dest.dat]", "[encoding]"],  ""],
+		"merge"      : [merge_tbl,    3,      4,    ["src1.{tbl,xml}", "src2.{tbl,xml}",
+	                                                     "dest.{tbl,xml}", "[encoding]"],     ""],
+		"convert"    : [convert,      2,      3,    ["src.{tbl,dat,xml}",
+	                                                     "dest.{tbl,dat,xml}", "[encoding]"], ""],
+		"dump_text"  : [dump_text,    2,      2,    ["src.tbl",   "dest.txt"],                ""],
+		"dump_data"  : [dump_data,    2,      2,    ["src.tbl",   "dest.txt"],                ""],
+		"wrap"       : [wrap_text,    2,      3,    ["src.{tbl,dat,xml}",
+	                                                     "dest.{tbl,dat,xml}", "[encoding]"], ""],
+		"encode"     : [encode,       3,      3,    ["src1.{tbl,xml}", "dest.{tbl,xml}",
+	                                                     "encoding"],                         ""]
 	}
 
 	commands_tbl["xml_to_tbl"][-1] = "convert *.xml file to *.tbl."

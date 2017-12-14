@@ -200,7 +200,7 @@ def read_xml(in_file):
 	header["data"] = el_header.text
 	return header, res
 	
-def write_tbl(out_file, header, l_groups, enc = "shift_jis"):
+def write_tbl(out_file, header, l_groups, encoding):
 	"""Write *.tbl data to file.
 	Params:
 	@header - *.tbl file header
@@ -220,7 +220,7 @@ def write_tbl(out_file, header, l_groups, enc = "shift_jis"):
 					text = b64decode(l_entry["text"])
 				else:
 					try:
-						text = l_entry["text"].encode(enc)
+						text = l_entry["text"].encode(encoding)
 					except:
 						print l_entry
 						raise
