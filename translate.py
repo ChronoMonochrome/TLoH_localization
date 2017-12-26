@@ -32,6 +32,8 @@ def u_test(s):
 	"""Try converting string to unicode. 
 	If that fails, will return base64-encoded string instead."""
 	b64_encoded = False
+	if type(s) == unicode:
+		return s, b64_encoded
 
 	try:
 		try:
@@ -154,7 +156,6 @@ def write_xml(out_file, header, l_groups):
 					ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "%s" %\
 					        l_entry["b64_encoded"]).text = l_entry["text"]
 				else:
-					force = 0
 					text, b64_encoded = u_test(l_entry["text"])
 					if b64_encoded:
 						ET.SubElement(el_group, ENTRY_TAG, b64_encoded = "True").text = text
