@@ -288,7 +288,16 @@ def dat_read_header(raw_data):
 	h_end = raw_data.find(DAT_HEADER_END_SIGNATURE) + len(DAT_HEADER_END_SIGNATURE)
 	header = raw_data[h_start: h_end]
 	return header, raw_data[h_end:]
-	
+
+def _detect_shift_jis(s):
+	# HACK: assume if entry contains at least one of shift_jis_bytes, then it's shift-jis encoded
+	# shift_jis_bytes = map(chr, range(0x80, 0x90))
+	shift_jis_bytes = ['\x80', '\x81', '\x82', '\x83', '\x84', '\x85', '\x86', '\x87', '\x88', '\x89', '\x8a', '\x8b', '\x8c', '\x8d', '\x8e', '\x8f'] 
+	for b in shift_jis_bytes:
+		for i in s:
+			if b == i: return True
+	return False
+
 def read_dat(in_file):
 	def append_entry(list_, entry_content, entry_type):
 		entry = OrderedDict()
@@ -338,6 +347,14 @@ def read_dat(in_file):
 				if entry_encoding["confidence"] >= 0.99 and entry_encoding["encoding"] == "SHIFT_JIS":
 					header["encoding"] = "shift-jis"
 					is_encoding_detected = True
+
+				if entry_encoding["confidence"] == .0:
+					#print(repr(buf))
+					if _detect_shift_jis(buf):
+						header["encoding"] = "shift-jis"
+						is_encoding_detected = True
+					
+
 			append_entry(entry_group["entries"], data_entry, "data")
 			buf = ""
 

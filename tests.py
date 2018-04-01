@@ -17,7 +17,7 @@ def catch(debug_info = ""):
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	dbg_msg = "%s: %s on line %d: %s" %(__func__, exc_type, exc_tb.tb_lineno, exc_obj)
 	if debug_info:
-		dbg_msg += debug_info
+		dbg_msg += ": " + debug_info
 	return (dbg_msg)
 
 class GameTests(unittest.TestCase):
@@ -72,7 +72,7 @@ class GameTests(unittest.TestCase):
 				try:
 					tbl_in, tbl_out = self._test_convert_integrity(tbl_in_filename)
 				except:
-					self.verificationErrors.append(catch())
+					self.verificationErrors.append(catch(debug_info = tbl_in_filename))
 					#raise
 
 				try:
