@@ -4,6 +4,8 @@
 
 import xml.etree.ElementTree as ET
 import re
+import chardet
+
 from base64 import b64encode, b64decode
 from collections import OrderedDict
 from textwrap import *
@@ -21,8 +23,6 @@ common_entry_ptrns = ["\xe3\x8a\xa5", "\xe3\x8d\xbb", "\xe2\x98\x85", \
 
 _match = lambda s, ptrns: any([re.match(i, s) for i in ptrns])
 _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
-
-et_parser = ET.XMLParser(encoding="utf-8")
 
 wrapper = TextWrapper()
 wrapper.width = 30
@@ -143,7 +143,7 @@ def write_xml(out_file, header, l_groups):
 
 	root = ET.Element("root")
 	doc = ET.SubElement(root, "doc")
-	ET.SubElement(doc, HEADER_TAG).text = header["data"]
+	ET.SubElement(doc, HEADER_TAG, encoding = header["encoding"]).text = header["data"]
 	
 	idx = 0
 	for l_group in l_groups:
@@ -172,7 +172,7 @@ def read_xml(in_file):
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
 
 	res = []
-	tree = ET.parse(in_file, parser = et_parser)
+	tree = ET.parse(in_file, parser = ET.XMLParser(encoding="utf-8"))
 	root = tree.getroot()
 	doc = root.find("doc")
 	el_header = doc.find(HEADER_TAG)	
@@ -199,9 +199,10 @@ def read_xml(in_file):
 
 	header = OrderedDict()
 	header["data"] = el_header.text
+	header["encoding"] = el_header.get("encoding")
 	return header, res
 	
-def write_tbl(out_file, header, l_groups, encoding):
+def write_tbl(out_file, header, l_groups, encoding = ""):
 	"""Write *.tbl data to file.
 	Params:
 	@header - *.tbl file header
@@ -209,6 +210,11 @@ def write_tbl(out_file, header, l_groups, encoding):
 	
 	res = []
 	res.append(b64decode(header["data"]))
+	if (not encoding and header["encoding"]):
+		encoding = header["encoding"]
+
+	if not encoding:
+		raise(BaseException("no encoding defined"))
 	
 	for l_group in l_groups:
 		res.append(l_group["type"])
@@ -229,7 +235,7 @@ def write_tbl(out_file, header, l_groups, encoding):
 				res.append(text)
 	open(out_file, "wb").write(b"".join(res))
 	
-def dump_text(out_file, l_groups):
+def dump_text(out_file, l_groups, encoding = "u8"):
 	"""Dump text entries of *.tbl file"""
 	
 	res = []
@@ -239,12 +245,19 @@ def dump_text(out_file, l_groups):
 		for entry in l_group["entries"]:
 			if not "text" in entry:
 				continue
+			try:
+				entry["text"].encode("u8")
+			except UnicodeDecodeError, e:
+				#print("entry: %s" % entry["text"])
+				#print(str(e))
+				#raise
+				continue
 			res.append(entry["text"] + "\n")
 		idx += 1
 	return open(out_file, "wb")\
 	       .write("".join(res).encode("u8"))
 		   
-def dump_data(out_file, l_groups):
+def dump_data(out_file, l_groups, encoding = "u8"):
 	"""Dump data entries of *.tbl file"""
 	res = []
 
@@ -287,6 +300,10 @@ def read_dat(in_file):
 	header = OrderedDict()
 	header_raw, data = dat_read_header(data)
 	header["data"] = b64encode(header_raw)
+
+	# default to utf-8
+	header["encoding"] = "utf-8"
+	is_encoding_detected = False
 	
 	entry_group = OrderedDict()
 	entry_group["data"] = ""
@@ -316,6 +333,11 @@ def read_dat(in_file):
 		
 		if data_entry:
 			append_entry(entry_group["entries"], buf, "text")
+			if not is_encoding_detected:
+				entry_encoding = chardet.detect(buf)
+				if entry_encoding["confidence"] >= 0.99 and entry_encoding["encoding"] == "SHIFT_JIS":
+					header["encoding"] = "shift-jis"
+					is_encoding_detected = True
 			append_entry(entry_group["entries"], data_entry, "data")
 			buf = ""
 

@@ -185,7 +185,7 @@ def _read_file(file):
 	elif ext == ".dat":
 		return _read_dat(file)
 
-def xml_to_tbl(in_file, out_file = "", encoding = "u8"):
+def xml_to_tbl(in_file, out_file = "", encoding = ""):
 	header, l_groups = translate.read_xml(in_file)
 
 	if not out_file:
@@ -218,7 +218,7 @@ def _get_out_filename(in_filename, in_ext):
 	elif (in_ext == ".xml"):
 		return in_filename + ".tbl"
 
-def convert(in_file, out_file, encoding = "u8"):
+def convert(in_file, out_file, encoding = ""):
 	header, l_groups = _read_file(in_file)
 
 	_in_file, _in_ext = os.path.splitext(in_file)
@@ -228,7 +228,7 @@ def convert(in_file, out_file, encoding = "u8"):
 	elif (_in_ext == ".xml"):
 		translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
-def wrap_text(in_file, out_file, encoding = "u8"):
+def wrap_text(in_file, out_file, encoding = ""):
 	header, l_groups = _read_file(in_file)
 
 	l_groups = translate.wrap_text(l_groups)
@@ -240,7 +240,7 @@ def wrap_text(in_file, out_file, encoding = "u8"):
 	elif (_out_ext == ".tbl"):
 		translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
-def merge_tbl(orig_file, data_file, out_file, encoding = "u8"):
+def merge_tbl(orig_file, data_file, out_file, encoding = ""):
 	out_format = os.path.splitext(out_file)[-1]
 	assert(out_format in [".tbl", ".xml"])
 	header1, res1 = _read_file(orig_file)
@@ -255,13 +255,13 @@ def merge_tbl(orig_file, data_file, out_file, encoding = "u8"):
 	elif out_format in [".tbl", ".dat"]:
 		translate.write_tbl(out_file, header1, res1, encoding = encoding)
 
-def dump_text(in_file, out_file):
+def dump_text(in_file, out_file, encoding = "u8"):
 	header, l_groups = _read_file(in_file)
-	return translate.dump_text(out_file, l_groups)
+	return translate.dump_text(out_file, l_groups, encoding = encoding)
 
-def dump_data(in_file, out_file):
+def dump_data(in_file, out_file, encoding = "u8"):
 	header, l_groups = _read_file(in_file)
-	return translate.dump_data(out_file, l_groups)
+	return translate.dump_data(out_file, l_groups, encoding = encoding)
 
 def encode(in_file, out_file, out_enc):
 	header, l_groups = _read_file(in_file)
@@ -296,8 +296,8 @@ def main():
 	                                                     "dest.{tbl,xml}", "[encoding]"],     ""],
 		"convert"    : [convert,      2,      3,    ["src.{tbl,dat,xml}",
 	                                                     "dest.{tbl,dat,xml}", "[encoding]"], ""],
-		"dump_text"  : [dump_text,    2,      2,    ["src.tbl",   "dest.txt"],                ""],
-		"dump_data"  : [dump_data,    2,      2,    ["src.tbl",   "dest.txt"],                ""],
+		"dump_text"  : [dump_text,    2,      3,    ["src.tbl",   "dest.txt", "[encoding]"],  ""],
+		"dump_data"  : [dump_data,    2,      3,    ["src.tbl",   "dest.txt", "[encoding]"],  ""],
 		"wrap"       : [wrap_text,    2,      3,    ["src.{tbl,dat,xml}",
 	                                                     "dest.{tbl,dat,xml}", "[encoding]"], ""],
 		"encode"     : [encode,       3,      3,    ["src1.{tbl,xml}", "dest.{tbl,xml}",
