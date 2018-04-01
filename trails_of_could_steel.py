@@ -179,7 +179,7 @@ def _read_file(file):
 	ext = os.path.splitext(file)[-1]
 	assert(ext in [".tbl", ".xml", ".dat"])
 	if ext == ".tbl":
-		return _read_tbl(file)
+		return _read_dat(file)
 	elif ext == ".xml":
 		return _read_xml(file)
 	elif ext == ".dat":
