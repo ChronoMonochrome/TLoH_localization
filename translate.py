@@ -320,6 +320,12 @@ def read_dat(in_file):
 	entry_group["type"] = ""
 
 	matches = [i for i in re.finditer("[^\x00-\x1F\x7F-\xFF]{4,}|[^\x00-\x3f\x61-\x6f\x92-\xff]{8,}", data)]
+
+	if not matches:
+		append_entry(entry_group["entries"], b64encode(data), "data")
+		res.append(entry_group)
+		return header, res
+
 	first_match = matches[0]
 	append_entry(entry_group["entries"], b64encode(data[: first_match.start()]), "data")
 	

@@ -25,7 +25,7 @@ class GameTests(unittest.TestCase):
 		self.verificationErrors = []
 
 	def tearDown(self):
-		pass #self.assertEqual([], self.verificationErrors)
+		self.assertEqual([], self.verificationErrors, msg = "")
 
 	def _test_convert_integrity(self, tbl_in_filename):
 		tmp_dir = tempfile._get_default_tempdir()
