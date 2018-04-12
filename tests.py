@@ -1,10 +1,12 @@
 import sys, os, tempfile
-import time
+import time, base64
 import unittest
 import trails_of_could_steel as tloh
+import translate
 
 DEBUG = False
 GAME_DATA_PATH = "/media/chrono/AMV/Games/_The Legend of Heroes Trails of Cold Steel/data"
+#GAME_DATA_PATH = "/media/chrono/AMV/dev/TLoH_localization/2"
 DIRS_IGNORE_LIST = ["fonts"]
 FILES_IGNORE_LIST = []
 
@@ -19,6 +21,20 @@ def catch(debug_info = ""):
 	if debug_info:
 		dbg_msg += ": " + debug_info
 	return (dbg_msg)
+
+read_entry = lambda s: base64.b64decode(s["data"]) if "data" in s else s["text"]
+
+def read_dat_verify(dat_file):
+	header, l_groups = translate.read_dat(dat_file)
+	buf = base64.b64decode(header["data"])
+	dat = open(dat_file, "rb").read()
+
+	for n, e in enumerate(l_groups[0]['entries']):
+		buf += read_entry(e)
+		if not dat.startswith(buf):
+			raise BaseException("must match the buf, first collision is %d" % n)
+
+	return header, l_groups
 
 class GameTests(unittest.TestCase):
 	def setUp(self):

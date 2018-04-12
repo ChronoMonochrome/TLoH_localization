@@ -27,6 +27,9 @@ _build_or_ptrn = lambda ptrns: "(%s)" % "|".join(ptrns)
 wrapper = TextWrapper()
 wrapper.width = 30
 
+# Another yet hack for some files
+def is_text(s):
+	return (not '\x89' in s)
 
 def u_test(s):
 	"""Try converting string to unicode. 
@@ -41,6 +44,10 @@ def u_test(s):
 		except:
 			res = s.decode("shift_jis")
 	except:
+		b64_encoded = True
+		res = b64encode(s)
+
+	if not is_text(s):
 		b64_encoded = True
 		res = b64encode(s)
 		
@@ -64,6 +71,7 @@ def _split(s):
 	text = s[text_start:]
 	return data, text
 
+# OBSOLETED. Use read_dat instead
 def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns, split_cb = None):
 	"""Read binary *.tbl file.
 	Returns *.tbl header and list of OrderedDict's representing each text or binary data entry."""
@@ -230,7 +238,8 @@ def write_tbl(out_file, header, l_groups, encoding = ""):
 						text = l_entry["text"].encode(encoding)
 					except:
 						print l_entry
-						raise
+						text = l_entry["text"]
+						#raise
 				
 				res.append(text)
 	open(out_file, "wb").write(b"".join(res))
@@ -298,7 +307,10 @@ def _detect_shift_jis(s):
 			if b == i: return True
 	return False
 
+glob_matches, last_idx = [], 0
+
 def read_dat(in_file):
+	global glob_matches, last_idx
 	def append_entry(list_, entry_content, entry_type):
 		entry = OrderedDict()
 		entry[entry_type] = entry_content
@@ -326,6 +338,8 @@ def read_dat(in_file):
 		res.append(entry_group)
 		return header, res
 
+	glob_matches = matches
+
 	first_match = matches[0]
 	append_entry(entry_group["entries"], b64encode(data[: first_match.start()]), "data")
 	
@@ -339,14 +353,16 @@ def read_dat(in_file):
 			next_match = matches[i + 1]
 			s_next, e_next = next_match.start(), next_match.end()
 			data_entry = b64encode(data[e_curr: s_next])
+			last_idx = s_next
 		except IndexError:
 			data_entry = b64encode(data[e_curr:])
+			last_idx = len(data)
 		
 		# In the case there are several neighboring text entries, join
 		# them into one. As only data entry appears, flush the buffer.
 		buf += match.group()
 		
-		if data_entry:
+		if data_entry or buf:
 			append_entry(entry_group["entries"], buf, "text")
 			if not is_encoding_detected:
 				entry_encoding = chardet.detect(buf)
@@ -360,9 +376,9 @@ def read_dat(in_file):
 						header["encoding"] = "shift-jis"
 						is_encoding_detected = True
 					
-
-			append_entry(entry_group["entries"], data_entry, "data")
 			buf = ""
-
+			if data_entry:
+				append_entry(entry_group["entries"], data_entry, "data")
+	#print(len(buf))
 	res.append(entry_group)
 	return header, res
