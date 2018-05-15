@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys, os, tempfile
 import time, base64
 import unittest
@@ -5,8 +7,10 @@ import trails_of_could_steel as tloh
 import translate
 
 DEBUG = False
-GAME_DATA_PATH = "/media/chrono/AMV/Games/_The Legend of Heroes Trails of Cold Steel/data"
+#GAME_DATA_PATH = "/media/chrono/AMV/Games/_The Legend of Heroes Trails of Cold Steel/data"
 #GAME_DATA_PATH = "/media/chrono/AMV/dev/TLoH_localization/2"
+#GAME_DATA_PATH = "/media/chrono/^____^/1/PSVita.datand.tbl/Tokyo Xanadu"
+GAME_DATA_PATH = "/media/chrono/^____^/1/PSVita.datand.tbl"
 DIRS_IGNORE_LIST = ["fonts"]
 FILES_IGNORE_LIST = []
 
@@ -35,6 +39,16 @@ def read_dat_verify(dat_file):
 			raise BaseException("must match the buf, first collision is %d" % n)
 
 	return header, l_groups
+
+def compare(dat_file1, dat_file2, debug_flag = 0):
+	s1 = open(dat_file1, "rb").read()
+	s2 = open(dat_file2, "rb").read()
+	s_min, s_max = (s1, s2) if len(s1) < len(s2) else (s2, s1)
+
+	for n, i in enumerate(s_min):
+		if s_max[n] != i:
+			return n, (s_min[n - debug_flag: n + debug_flag], s_max[n - debug_flag: n + debug_flag])
+	return 0
 
 class GameTests(unittest.TestCase):
 	def setUp(self):
@@ -99,7 +113,7 @@ class GameTests(unittest.TestCase):
 
 		for e in self.verificationErrors:
 			print(e)
-					
+
 
 if __name__ == '__main__':
     unittest.main()

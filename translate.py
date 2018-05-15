@@ -29,7 +29,10 @@ wrapper.width = 30
 
 # Another yet hack for some files
 def is_text(s):
-	return (not '\x89' in s)
+	# map(chr, range(0x80, 0x90))
+	non_text_chars = frozenset(['\x80', '\x81', '\x82', '\x83', '\x84', '\x85', '\x86', 
+			'\x87', '\x88', '\x89', '\x8a', '\x8b', '\x8c', '\x8d', '\x8e', '\x8f'])
+	return not bool(set(s) & non_text_chars)
 
 def u_test(s):
 	"""Try converting string to unicode. 
