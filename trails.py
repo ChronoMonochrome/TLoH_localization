@@ -229,6 +229,10 @@ def convert(in_file, out_file, encoding = ""):
 	if (_in_ext in [".tbl", ".dat"]):
 		translate.write_xml(out_file, header, l_groups)
 	elif (_in_ext == ".xml"):
+		_out_ext = os.path.splitext(out_file)[-1]
+		if not _out_ext:
+			out_file += header.get("extension")
+
 		translate.write_tbl(out_file, header, l_groups, encoding = encoding)
 
 def wrap_text(in_file, out_file, encoding = ""):
@@ -312,6 +316,9 @@ def bulk_files_operation(src_dir, dest_dir, patterns, operation):
 						
 def bulk_copy(src_dir, dest_dir):
 	bulk_files_operation(src_dir, dest_dir, ["*.tbl", "*.dat"], COPY)
+	
+def bulk_convert(src_dir, dest_dir):
+	bulk_files_operation(src_dir, dest_dir, ["*.tbl", "*.dat", "*.xml"], CONVERT)
 
 def usage(commands_tbl, error = ""):
 	buf =  ["The Legend of Heroes: Trails of Cold Steel localization scripts\n"]
@@ -348,7 +355,8 @@ def main():
 	                                                     "dest.{tbl,dat,xml}", "[encoding]"], ""],
 		"encode"     : [encode,       3,      3,    ["src1.{tbl,xml}", "dest.{tbl,xml}",
 	                                                     "encoding"],                         ""],
-		"bulk_copy"  : [bulk_copy,    2,      2,    ["source_dir", "dest_dir"],               ""]
+		"bulk_copy"  : [bulk_copy,    2,      2,    ["source_dir", "dest_dir"],               ""],
+		"bulk_convert": [bulk_convert, 2,      2,    ["source_dir", "dest_dir"],               ""]
 	}
 
 	commands_tbl["xml_to_tbl"][-1] = "convert *.xml file to *.tbl."
@@ -362,6 +370,7 @@ def main():
 	commands_tbl["wrap"][-1]       = "wrap text entries in a source file so that they fit on the display."
 	commands_tbl["encode"][-1]     = "change encoding of a source file."
 	commands_tbl["bulk_copy"][-1]  = "bulk copy *.tbl and *.dat files from source_dir to dest_dir."
+	commands_tbl["bulk_convert"][-1]  = "bulk convert files in source_dir and save them in dest_dir."
  	if len(sys.argv) < 2:
 		usage(commands_tbl)
 

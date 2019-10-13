@@ -3,6 +3,7 @@
 # Author: Shilin Victor (chrono.monochrome@gmail.com)
 
 import xml.etree.ElementTree as ET
+import os
 import re
 import chardet
 
@@ -91,6 +92,7 @@ def read_tbl(in_file, l_tbl_tags, entry_ptrns = common_entry_ptrns, split_cb = N
 
 	header = OrderedDict()
 	header["data"] = b64encode(raw_strings[0])
+	header["extension"] = os.path.splitext(in_file)[-1]
 
 	tag_type = ""
 	for raw_string in raw_strings[1:]:
@@ -154,7 +156,7 @@ def write_xml(out_file, header, l_groups):
 
 	root = ET.Element("root")
 	doc = ET.SubElement(root, "doc")
-	ET.SubElement(doc, HEADER_TAG, encoding = header["encoding"]).text = header["data"]
+	ET.SubElement(doc, HEADER_TAG, encoding = header["encoding"], extension = header["extension"]).text = header["data"]
 	
 	idx = 0
 	for l_group in l_groups:
@@ -211,6 +213,7 @@ def read_xml(in_file):
 	header = OrderedDict()
 	header["data"] = el_header.text
 	header["encoding"] = el_header.get("encoding")
+	header["extension"] = el_header.get("extension")
 	return header, res
 	
 def write_tbl(out_file, header, l_groups, encoding = ""):
@@ -328,6 +331,8 @@ def read_dat(in_file):
 	# default to utf-8
 	header["encoding"] = "utf-8"
 	is_encoding_detected = False
+
+	header["extension"] = os.path.splitext(in_file)[-1]
 	
 	entry_group = OrderedDict()
 	entry_group["data"] = ""
