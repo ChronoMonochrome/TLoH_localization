@@ -4,6 +4,9 @@
 
 import os, sys
 import re
+import shutil
+import fnmatch
+
 import translate
 from collections import OrderedDict
 
@@ -266,6 +269,49 @@ def dump_data(in_file, out_file, encoding = "u8"):
 def encode(in_file, out_file, out_enc):
 	header, l_groups = _read_file(in_file)
 	translate.write_tbl(out_file, header, l_groups, out_enc)
+	
+COPY = "copy"
+CONVERT = "convert"
+
+OPERATIONS = [COPY, CONVERT]
+
+def bulk_files_operation(src_dir, dest_dir, patterns, operation):
+	"""
+	Perform bulk operations on files.
+	@src_dir: source directory to perform operations on.
+	@dest_dir: destination directory
+	@patterns: list of filename patterns to match in source directory.
+	@operation: either copy or convert."""
+	src_dir = os.path.realpath(src_dir)
+	dest_dir = os.path.realpath(dest_dir)
+	for root, dirs, files in os.walk(src_dir):
+		for basename in files:
+			for pattern in patterns:
+				if fnmatch.fnmatch(basename, pattern):
+					src_filename = os.path.join(root, basename)
+					root_abs = os.path.abspath(root)
+					root_rel = root_abs.split(src_dir)[-1]
+					if root_rel[0] in ["/", "\\"]:
+						root_rel = root_rel[1:]
+					out_dir = os.path.join(dest_dir, root_rel)
+					if not os.path.exists(out_dir):
+						#print("create %s" % out_dir)
+						os.makedirs(out_dir)
+
+					if operation == COPY:
+						dest_filename = os.path.join(dest_dir, os.path.join(root_rel, basename))
+						#print("copy %s to %s" % (src_filename, dest_filename))
+						shutil.copy(src_filename, dest_filename)
+					elif operation == CONVERT:
+						filename_no_ext, ext = os.path.splitext(basename)
+						if ext == ".xml":
+							dest_filename = os.path.join(dest_dir, os.path.join(root_rel, filename_no_ext))
+						else:
+							dest_filename = os.path.join(dest_dir, os.path.join(root_rel, filename_no_ext + ".xml"))
+						convert(src_filename, dest_filename)
+						
+def bulk_copy(src_dir, dest_dir):
+	bulk_files_operation(src_dir, dest_dir, ["*.tbl", "*.dat"], COPY)
 
 def usage(commands_tbl, error = ""):
 	buf =  ["The Legend of Heroes: Trails of Cold Steel localization scripts\n"]
@@ -279,7 +325,7 @@ def usage(commands_tbl, error = ""):
 		com_list.append("%s - %s" % (com, v[-1]))
 
         if error: buf.append(error + "\n")
-	buf.append("Usage: trails_of_could_steel.py command args\n")
+	buf.append("Usage: trails.py command args\n")
 	buf.append("Commands:")
 	buf += com_list
 	print("\n".join(buf))
@@ -301,7 +347,8 @@ def main():
 		"wrap"       : [wrap_text,    2,      3,    ["src.{tbl,dat,xml}",
 	                                                     "dest.{tbl,dat,xml}", "[encoding]"], ""],
 		"encode"     : [encode,       3,      3,    ["src1.{tbl,xml}", "dest.{tbl,xml}",
-	                                                     "encoding"],                         ""]
+	                                                     "encoding"],                         ""],
+		"bulk_copy"  : [bulk_copy,    2,      2,    ["source_dir", "dest_dir"],               ""]
 	}
 
 	commands_tbl["xml_to_tbl"][-1] = "convert *.xml file to *.tbl."
@@ -314,6 +361,7 @@ def main():
 	commands_tbl["dump_data"][-1]  = "extract data entries from src.tbl and write to dest.txt."
 	commands_tbl["wrap"][-1]       = "wrap text entries in a source file so that they fit on the display."
 	commands_tbl["encode"][-1]     = "change encoding of a source file."
+	commands_tbl["bulk_copy"][-1]  = "bulk copy *.tbl and *.dat files from source_dir to dest_dir."
  	if len(sys.argv) < 2:
 		usage(commands_tbl)
 

@@ -1,6 +1,6 @@
 <h1>The Legend of Heroes: Trails of Cold Steel localization scripts</h1>
 
-<h2><b>Usage: trails_of_could_steel.py command args</b></h2>
+<h2><b>Usage: trails.py command args</b></h2>
 
 <h2><b>Commands: </b></h2>
 <pre>
