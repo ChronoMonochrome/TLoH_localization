@@ -2,7 +2,7 @@
 
 <h2><b>Install dependencies:</b></h2> python -m pip install -r requirements.txt
 
-<h2><b>Usage</b></h2>: trails.py command args
+<h2><b>Usage:</b></h2> trails.py command args
 
 <h2><b>Commands: </b></h2>
 <pre>
