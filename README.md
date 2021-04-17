@@ -1,5 +1,7 @@
 <h1>The Legend of Heroes: Trails of Cold Steel localization scripts</h1>
 
+<h2><b>Install dependencies: python -m pip install -r requirements.txt</b></h2>
+
 <h2><b>Usage: trails.py command args</b></h2>
 
 <h2><b>Commands: </b></h2>
